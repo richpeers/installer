@@ -4,11 +4,11 @@ Enables installing old releases of laravel.
 
 Run ```laravel new blog --5.3``` and it will use composer rather than the desfault, effectively running ```composer create-project laravel/laravel blog "5.3.x"`
 
-Works exactly the same as the laravel/installer except for old versions - 5.3, 5.2 and 5.1.
+Works exactly the same as the official installer except for installing old versions of laravel - 5.3, 5.2 and 5.1.
 
 ```laravel new blog``` uses the same methods as origin laravel/laravel for master latest, same with ```laravel new blog --dev``` for the dev branch of laravel 
 
-## own notes to pull this down
+## own personal notes to pull this down - use with caution
 
 1.) ```composer global require laravel/installer``` as normal
 
