@@ -26,7 +26,9 @@ class NewCommand extends Command
             ->setDescription('Create a new Laravel application.')
             ->addArgument('name', InputArgument::OPTIONAL)
             ->addOption('dev', null, InputOption::VALUE_NONE, 'Installs the latest "development" release')
-            ->addOption('5.2', null, InputOption::VALUE_NONE, 'Installs the "5.2" release');
+            ->addOption('5.1', null, InputOption::VALUE_NONE, 'Installs the "5.1" release')
+            ->addOption('5.2', null, InputOption::VALUE_NONE, 'Installs the "5.2" release')
+            ->addOption('5.3', null, InputOption::VALUE_NONE, 'Installs the "5.3" release');
     }
 
     /**
@@ -50,26 +52,40 @@ class NewCommand extends Command
 
         $version = $this->getVersion($input);
 
-        $this->download($zipFile = $this->makeFilename(), $version)
-             ->extract($zipFile, $directory)
-             ->cleanUp($zipFile);
+        $source = $this->getSource($version);
 
         $composer = $this->findComposer();
 
-        $commands = [
-            $composer.' install --no-scripts',
-            $composer.' run-script post-root-package-install',
-            $composer.' run-script post-install-cmd',
-            $composer.' run-script post-create-project-cmd',
-        ];
+        if ($source === 'laravel') {
 
-        if ($input->getOption('no-ansi')) {
-            $commands = array_map(function ($value) {
-                return $value.' --no-ansi';
-            }, $commands);
+            $this->download($zipFile = $this->makeFilename(), $version)
+                ->extract($zipFile, $directory)
+                ->cleanUp($zipFile);
+
+            $commands = [
+                $composer.' install --no-scripts',
+                $composer.' run-script post-root-package-install',
+                $composer.' run-script post-install-cmd',
+                $composer.' run-script post-create-project-cmd',
+            ];
+
+            if ($input->getOption('no-ansi')) {
+                $commands = array_map(function ($value) {
+                    return $value.' --no-ansi';
+                }, $commands);
+            }
+
+            $process = new Process(implode(' && ', $commands), $directory, null, null, null);
         }
 
-        $process = new Process(implode(' && ', $commands), $directory, null, null, null);
+        if ($source === 'composer') {
+
+            $name = $input->getArgument('name');
+
+            $command = $composer . ' create-project laravel/laravel ' . $name . ' "' . $version . '.*"';
+
+            $process = new Process($command, null, null, null, null);
+        }
 
         if ('\\' !== DIRECTORY_SEPARATOR && file_exists('/dev/tty') && is_readable('/dev/tty')) {
             $process->setTty(true);
@@ -120,9 +136,6 @@ class NewCommand extends Command
                 break;
             case 'master':
                 $filename = 'latest.zip';
-                break;
-            case '5.2':
-                $filename = 'latest-52.zip';
                 break;
         }
 
@@ -180,11 +193,41 @@ class NewCommand extends Command
             return 'develop';
         }
 
+        if ($input->getOption('5.1')) {
+            return '5.1';
+        }
+
         if ($input->getOption('5.2')) {
             return '5.2';
         }
 
+        if ($input->getOption('5.3')) {
+            return '5.3';
+        }
+
         return 'master';
+    }
+
+    /**
+     * Determine source of the download.
+     *
+     * @param $version
+     * @return string
+     */
+    protected function getSource($version)
+    {
+        switch ($version) {
+            case 'develop':
+                return 'laravel';
+            case 'master':
+                return 'laravel';
+            case '5.1':
+                return 'composer';
+            case '5.2':
+                return 'composer';
+            case '5.3':
+                return 'composer';
+        }
     }
 
     /**
