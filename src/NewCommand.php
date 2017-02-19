@@ -28,7 +28,8 @@ class NewCommand extends Command
             ->addOption('dev', null, InputOption::VALUE_NONE, 'Installs the latest "development" release')
             ->addOption('5.1', null, InputOption::VALUE_NONE, 'Installs the "5.1" release')
             ->addOption('5.2', null, InputOption::VALUE_NONE, 'Installs the "5.2" release')
-            ->addOption('5.3', null, InputOption::VALUE_NONE, 'Installs the "5.3" release');
+            ->addOption('5.3', null, InputOption::VALUE_NONE, 'Installs the "5.3" release')
+            ->addOption('phpstorm', null, InputOption::VALUE_NONE, 'Includes barryvdh/laravel-ide-helper and barryvdh/laravel-debugbar');
     }
 
     /**
@@ -94,6 +95,33 @@ class NewCommand extends Command
         $process->run(function ($type, $line) use ($output) {
             $output->write($line);
         });
+
+        if ($input->getOption('phpstorm')) {
+
+            $commands = [
+                $composer.' require --dev barryvdh/laravel-ide-helper',
+                $composer.' require --dev barryvdh/laravel-debugbar',
+            ];
+
+            $process = new Process(implode(' && ', $commands), $directory, null, null, null);
+
+            $output->writeln('<info>Installing phpstorm specific repositories...</info>');
+
+            $process->run(function ($type, $line) use ($output) {
+                $output->write($line);
+            });
+
+            $output->writeln('<comment>For BarryVDH php stuff, add the following code to your app/Providers/AppServiceProvider.php file, within the register() method:</comment>
+            if ($this->app->environment() !== \'production\') {
+                    $this->app->register(\Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class);
+                    $this->app->register(\Barryvdh\Debugbar\ServiceProvider::class,);
+             }
+             
+             <comment>then run:</comment>
+             php artisan clear-compiled | php artisan ide-helper:generate | php artisan optimize
+             
+             ');
+        }
 
         $output->writeln('<comment>Application ready! Build something amazing.</comment>');
     }
